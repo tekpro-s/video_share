@@ -5,6 +5,7 @@ import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import Thanks from '../views/Thanks.vue'
 import Detail from '../views/Detail.vue'
+import Mypage from '../views/Mypage.vue'
 
 Vue.use(VueRouter)
 
@@ -26,6 +27,13 @@ const routes = [
     path: '/thanks',
     name: 'Thanks',
     component: Thanks
+  }, {
+    path: '/mypage',
+    name: 'Mypage',
+    component: Mypage,
+    meta: {
+      requiresAuth: true,
+    }
   },
   {
     path: "/detail/:video_id",

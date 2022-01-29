@@ -1,9 +1,13 @@
 <template>
   <div>
-    <!--
+    <!-- {{ genre }}<br />
+    {{ genres }}<br />
+    {{ keyword }}<br />
+    {{ filteredVideos }}<br /> -->
     {{ videos_data }}
-    {{ videos_snippets }}
-    -->
+    {{ getFav }}
+    <!-- {{ videos_snippets }} -->
+
     <button v-if="this.$store.state.auth" class="add-button" @click="openModal">
       動画を追加する
     </button>
@@ -51,37 +55,53 @@
       </div>
     </div>
     <div class="home flex">
-      <div class="card" v-for="(video, index) in videos_data" :key="video.id">
-        <iframe
-          width="320"
-          height="180"
-          :src="srcCreate(video.video_name)"
-          title="YouTube video player"
-          frameborder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowfullscreen
-        ></iframe>
-        <div class="card-content">
-          <h2 class="card-title">{{ videos_snippets[index].title }}</h2>
-        </div>
-        <div class="flex">
-          <div class="card-link">
-            <button @click="detail(video.id)">詳しくみる</button>
+      <div
+        v-for="(video, index) in filteredVideos"
+        :key="video.id"
+        class="card"
+      >
+        <div v-if="video">
+          <iframe
+            width="320"
+            height="180"
+            :src="srcCreate(video.video_name)"
+            title="YouTube video player"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+          ></iframe>
+          <div class="card-content">
+            <h2 class="card-title">{{ video.video_title }}</h2>
           </div>
-          <img
-            v-if="!getFav[index] && $store.state.auth"
-            class="icon"
-            src="../assets/like_false.png"
-            @click="setFav(index)"
-            alt
-          />
-          <img
-            v-if="getFav[index] && $store.state.auth"
-            class="icon"
-            src="../assets/like_true.png"
-            @click="setFav(index)"
-            alt
-          />
+          <div class="flex">
+            <div class="card-link">
+              <p>{{ video.genre.name }}</p>
+              <p>{{ video.summary }}</p>
+              <p>{{ video.likes }}</p>
+              <p>{{ video.id }}</p>
+              <!-- <p>{{ video.liked_by_user }}</p> -->
+              <button @click="detail(video.id)">詳しくみる</button>
+            </div>
+            <img
+              v-if="!getFav(video)"
+              class="icon"
+              src="../assets/like_false.png"
+              @click="setFav(video, index)"
+              alt
+            />
+            <img
+              v-if="getFav(video)"
+              class="icon"
+              src="../assets/like_true.png"
+              @click="setFav(video, index)"
+              alt
+            />
+            <!-- <button
+              class="icon"
+              @click="onLikeClick(video)"
+              :class="{ 'heart-animation': video.liked_by_user }"
+            /> -->
+          </div>
         </div>
       </div>
     </div>
@@ -92,6 +112,11 @@
 import axios from "axios";
 
 export default {
+  props: {
+    genre: String,
+    genres: Array,
+    keyword: String,
+  },
   data() {
     return {
       api_url: null,
@@ -108,7 +133,7 @@ export default {
     async getVideos() {
       const videos = await axios.get(this.api_url + "videos");
       this.videos_data = videos.data.data;
-      this.videos_snippets = videos.data.snippets;
+      // this.videos_snippets = videos.data.snippets;
       console.log(this.videos);
     },
     detail(id) {
@@ -121,8 +146,8 @@ export default {
       try {
         const videos = await axios.post(this.api_url + "videos", {
           user_id: 2,
-          video_name: "SyVxZ7fVOj4",
-          genre_id: 1,
+          video_name: this.video_name,
+          genre_id: this.genre_id,
           summary: this.summary,
         });
 
@@ -132,7 +157,7 @@ export default {
 
         console.log(video.data.data);
         this.videos_data.push(video.data.data);
-        this.videos_snippets.push(video.data.snippets);
+        // this.videos_snippets.push(video.data.snippets);
         this.show = false;
 
         console.log(video);
@@ -140,18 +165,30 @@ export default {
         alert(error);
       }
     },
-    async setFav(index) {
-      try {
-        // ログイン中のユーザーIDが、ショップに紐づくいいねリストにあるか確認
-        const result = this.videos_data[index].likes.some((value) => {
-          return value.user_id == this.$store.state.user.id;
-        });
+    onLikeClick(video) {
+      if (video.liked_by_user) {
+        this.unlike(video);
+      } else {
+        this.like(video);
+      }
+    },
+    async setFav(video, index) {
+      const video_data = video;
+      console.log(video_data);
 
+      // ログイン中のユーザーIDが、ショップに紐づくいいねリストにあるか確認
+      const result = video_data.likes.some((value) => {
+        alert(value.user_id + " " + this.$store.state.user.id);
+        return value.user_id == this.$store.state.user.id;
+      });
+      alert(result);
+
+      try {
         // いいねが存在するか確認
         if (result) {
           // いいねが存在する場合いいね削除
           const likes = await axios.delete(
-            this.api_url + "videos/" + this.videos_data[index].id + "/likes",
+            this.api_url + "videos/" + video_data.id + "/likes",
             {
               params: { user_id: this.$store.state.user.id },
             }
@@ -161,7 +198,7 @@ export default {
         } else {
           // いいねが存在しない場合いいね追加
           const likes = await axios.put(
-            this.api_url + "videos/" + this.videos_data[index].id + "/likes",
+            this.api_url + "videos/" + video_data.id + "/likes",
             {
               user_id: this.$store.state.user.id,
             }
@@ -170,14 +207,27 @@ export default {
           console.log(likes);
         }
 
-        const video = await axios.get(
-          this.api_url + "videos/" + this.videos_data[index].id
+        const video_data_after = await axios.get(
+          this.api_url + "videos/" + video_data.id
         );
-        this.videos_data.splice(index, 1, video.data.data);
-        console.log(video);
+        console.log(video_data_after);
+        this.videos_data.splice(index, 1, video_data_after.data.data);
+        alert(this.videos_data);
+        console.log(this.videos_data);
       } catch (error) {
         alert(error);
       }
+    },
+    getFav(video) {
+      const video_data = video;
+
+      // ログイン中のユーザーIDが、ショップに紐づくいいねリストにあるか確認
+      const result = video_data.likes.some((value) => {
+        //alert(value.user_id + " " + this.$store.state.user.id);
+        return value.user_id == this.$store.state.user.id;
+      });
+
+      return result;
     },
     openModal() {
       this.id = "";
@@ -189,18 +239,43 @@ export default {
     },
   },
   computed: {
-    getFav() {
-      const likes = [];
+    filteredVideos() {
+      // 全店舗の元データを読み込む
+      const videos = [];
 
       for (const i in this.videos_data) {
-        // ログイン中のユーザーIDが、ショップに紐づくいいねリストにあるか確認
-        const result = this.videos_data[i].likes.some((value) => {
-          return value.user_id == this.$store.state.user.id;
-        });
-        likes.push(result);
-      }
+        //var flag = false;
+        //alert(flag);
+        const videos_data = this.videos_data[i];
+        // const videos_snippet = this.videos_snippets[i];
+        //alert(videos_snippet.title);
+        console.log(videos_data);
+        if (videos_data.video_title.indexOf(this.keyword) !== -1) {
+          if (videos_data.genre.name == this.genre || !this.genre) {
+            //alert(video.genre.name + " " + this.genre);
+            //if (this.$route.path === "/mypage") {
+            // ログイン中のユーザーIDが、ショップに紐づくいいねリストにあるか確認
+            // const result = video.likes.some((value) => {
+            //   return value.user_id == this.$store.state.user.id;
+            // });
+            // if (result) {
+            //   videos2.push(video);
+            // }
+            // flag = true;
+            // alert(flag);
+            videos.push(videos_data);
+          }
+        }
 
-      return likes;
+        // if (flag == true) {
+        //   videos.push(videos_data);
+        // } else {
+        //   videos.push(false);
+        // }
+        //}
+      }
+      //alert(videos);
+      return videos;
     },
   },
   created() {

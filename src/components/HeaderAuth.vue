@@ -4,7 +4,8 @@
       <img
         class="logo"
         src="../assets/menu.png"
-        :to="{name:'Videos'}"
+        @click="$router.push('/mypage')"
+        v-if="this.$store.state.auth"
       />
       <p v-if="this.$store.state.auth">
         ログインユーザー：{{ this.$store.state.user.name }}さん
