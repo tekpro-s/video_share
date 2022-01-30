@@ -1,14 +1,20 @@
 <template>
   <div>
+    <!-- {{ selectgenres }}
+    {{ videos_data }} -->
     <!-- {{ genre }}<br />
     {{ genres }}<br />
     {{ keyword }}<br />
     {{ filteredVideos }}<br /> -->
-    {{ videos_data }}
-    {{ getFav }}
+    <!-- {{ videos_data }}
+    {{ getFav }} -->
     <!-- {{ videos_snippets }} -->
 
-    <button v-if="this.$store.state.auth" class="add-button" @click="openModal">
+    <button
+      v-if="this.$store.state.auth && this.$route.path === '/'"
+      class="add-button"
+      @click="openModal"
+    >
       動画を追加する
     </button>
     <div id="overlay" v-if="show">
@@ -28,7 +34,7 @@
               <select class="search" v-model="genre_id">
                 <option value="">All genre</option>
                 <option
-                  v-for="genre in genres"
+                  v-for="genre in selectgenres"
                   :key="genre.id"
                   :value="genre.id"
                 >
@@ -77,10 +83,11 @@
             <div class="card-link">
               <p>{{ video.genre.name }}</p>
               <p>{{ video.summary }}</p>
-              <p>{{ video.likes }}</p>
-              <p>{{ video.id }}</p>
+              <!-- <p>{{ video.likes }}</p>
+              <p>{{ video.id }}</p> -->
               <!-- <p>{{ video.liked_by_user }}</p> -->
-              <button @click="detail(video.id)">詳しくみる</button>
+              <!-- <button @click="detail(video.id)">詳しくみる</button> -->
+              <button @click="deleteVideo(video, index)">削除</button>
             </div>
             <img
               v-if="!getFav(video)"
@@ -119,6 +126,7 @@ export default {
   },
   data() {
     return {
+      selectgenres: [],
       api_url: null,
       videos_data: null,
       videos_snippets: null,
@@ -136,6 +144,11 @@ export default {
       // this.videos_snippets = videos.data.snippets;
       console.log(this.videos);
     },
+    async getGenres() {
+      const genres = await axios.get(this.api_url + "genres");
+      this.selectgenres = genres.data.data;
+      console.log(this.selectgenres);
+    },
     detail(id) {
       this.$router.push({ name: "Detail", params: { video_id: id } });
     },
@@ -143,10 +156,21 @@ export default {
       return "https://www.youtube.com/embed/" + video_name;
     },
     async send() {
+      //動画追加
       try {
+        alert(
+          this.video_name +
+            " " +
+            this.$store.state.user.id +
+            " " +
+            this.genre_id +
+            " " +
+            this.summary
+        );
         const videos = await axios.post(this.api_url + "videos", {
-          user_id: 2,
           video_name: this.video_name,
+          video_title: "テスト",
+          user_id: this.$store.state.user.id,
           genre_id: this.genre_id,
           summary: this.summary,
         });
@@ -163,6 +187,23 @@ export default {
         console.log(video);
       } catch (error) {
         alert(error);
+      }
+    },
+    async deleteVideo(video, index) {
+      //動画削除
+      alert(video.id);
+      try {
+        //if (this.shop.comments[index].user_id == this.$store.state.user.id) {
+        const result = await axios.delete(this.api_url + "videos/" + video.id);
+        console.log(result);
+        this.videos_data.splice(index, 1);
+        // this.shop.comments.splice(index, 1);
+        // this.active.splice(index, 1);
+        // } else {
+        //   alert("自分のコメントのみ削除できます。");
+        // }
+      } catch (e) {
+        alert(e);
       }
     },
     onLikeClick(video) {
@@ -211,6 +252,7 @@ export default {
           this.api_url + "videos/" + video_data.id
         );
         console.log(video_data_after);
+        alert(index + " " + this.$store.state.user.id);
         this.videos_data.splice(index, 1, video_data_after.data.data);
         alert(this.videos_data);
         console.log(this.videos_data);
@@ -253,27 +295,29 @@ export default {
         if (videos_data.video_title.indexOf(this.keyword) !== -1) {
           if (videos_data.genre.name == this.genre || !this.genre) {
             //alert(video.genre.name + " " + this.genre);
-            //if (this.$route.path === "/mypage") {
-            // ログイン中のユーザーIDが、ショップに紐づくいいねリストにあるか確認
-            // const result = video.likes.some((value) => {
-            //   return value.user_id == this.$store.state.user.id;
-            // });
-            // if (result) {
-            //   videos2.push(video);
-            // }
-            // flag = true;
-            // alert(flag);
-            videos.push(videos_data);
+            if (this.$route.path === "/mypage") {
+              //ログイン中のユーザーIDが、ショップに紐づくいいねリストにあるか確認
+              const result = videos_data.likes.some((value) => {
+                return value.user_id == this.$store.state.user.id;
+              });
+              if (result) {
+                videos.push(videos_data);
+              }
+              // flag = true;
+              // alert(flag);
+            } else {
+              videos.push(videos_data);
+            }
           }
         }
-
-        // if (flag == true) {
-        //   videos.push(videos_data);
-        // } else {
-        //   videos.push(false);
-        // }
-        //}
       }
+
+      // if (flag == true) {
+      //   videos.push(videos_data);
+      // } else {
+      //   videos.push(false);
+      // }
+      //}
       //alert(videos);
       return videos;
     },
@@ -282,6 +326,8 @@ export default {
     // 環境設定ファイルからURL取得
     this.api_url = process.env.VUE_APP_API_BASE_URL;
     this.getVideos();
+    alert("");
+    this.getGenres();
   },
 };
 </script>
