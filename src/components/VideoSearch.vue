@@ -29,7 +29,7 @@ export default {
     };
   },
   methods: {
-    inputKeyword: function inputKeyword(e) {
+    changeKeyword: function inputKeyword(e) {
       this.$emit("input-keyword", e.target.value);
     },
     changeGenre: function changeGenre(e) {

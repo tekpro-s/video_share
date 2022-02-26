@@ -9,6 +9,10 @@
     <!-- {{ videos_data }}
     {{ getFav }} -->
     <!-- {{ videos_snippets }} -->
+    {{ selectgenres }}
+    <!-- {{ active }}
+    {{ videos_data }} -->
+    {{ videos_data[0] }}
 
     <button
       v-if="this.$store.state.auth && this.$route.path === '/'"
@@ -61,11 +65,7 @@
       </div>
     </div>
     <div class="home flex">
-      <div
-        v-for="(video, index) in filteredVideos"
-        :key="video.id"
-        class="card"
-      >
+      <div v-for="video in filteredVideos" :key="video.id" class="card">
         <div v-if="video">
           <iframe
             width="320"
@@ -77,30 +77,63 @@
             allowfullscreen
           ></iframe>
           <div class="card-content">
-            <h2 class="card-title">{{ video.video_title }}</h2>
+            <h2 class="card-title" v-if="!getActive(video)">
+              {{ video.video_title }}
+            </h2>
+            <input
+              placeholder="title"
+              v-model="video.video_title"
+              size="50"
+              v-else
+            />
           </div>
           <div class="flex">
             <div class="card-link">
-              <p>{{ video.genre.name }}</p>
-              <p>{{ video.summary }}</p>
+              <p v-if="!getActive(video)">{{ video.genre.name }}</p>
+              <select class="search" v-model="video.genre_id" v-else>
+                {{
+                  genres
+                }}
+                <option value="">All genre</option>
+                <option
+                  v-for="genre in selectgenres"
+                  :key="genre.id"
+                  :value="genre.id"
+                >
+                  {{ genre.name }}
+                </option>
+              </select>
+
+              <p v-if="!getActive(video)">{{ video.summary }}</p>
+              <input
+                placeholder="summary"
+                v-model="video.summary"
+                size="50"
+                v-else
+              />
               <!-- <p>{{ video.likes }}</p>
               <p>{{ video.id }}</p> -->
               <!-- <p>{{ video.liked_by_user }}</p> -->
               <!-- <button @click="detail(video.id)">詳しくみる</button> -->
-              <button @click="deleteVideo(video, index)">削除</button>
+              <button @click="updateVideo(video)" v-if="$route.path === '/'">
+                更新
+              </button>
+              <button @click="deleteVideo(video)" v-if="$route.path === '/'">
+                削除
+              </button>
             </div>
             <img
               v-if="!getFav(video)"
               class="icon"
               src="../assets/like_false.png"
-              @click="setFav(video, index)"
+              @click="setFav(video)"
               alt
             />
             <img
               v-if="getFav(video)"
               class="icon"
               src="../assets/like_true.png"
-              @click="setFav(video, index)"
+              @click="setFav(video)"
               alt
             />
             <!-- <button
@@ -135,12 +168,18 @@ export default {
       video_name: "",
       genre_id: 1,
       summary: "",
+      active: [],
     };
   },
   methods: {
     async getVideos() {
       const videos = await axios.get(this.api_url + "videos");
       this.videos_data = videos.data.data;
+
+      for (const i in this.videos_data) {
+        this.active.push(false);
+        console.log(i);
+      }
       // this.videos_snippets = videos.data.snippets;
       console.log(this.videos);
     },
@@ -189,19 +228,69 @@ export default {
         alert(error);
       }
     },
-    async deleteVideo(video, index) {
+    async updateVideo(video) {
+      //動画更新
+      alert(video.id);
+
+      try {
+        const index = this.videos_data.findIndex((v) => v.id === video.id);
+
+        if (video.user_id == this.$store.state.user.id) {
+          if (!this.active[index]) {
+            const result = await axios.put(
+              this.api_url + "videos/" + video.id,
+              {
+                video_name: video.video_name,
+                video_title: video.video_title,
+                user_id: video.user_id,
+                genre_id: video.genre_id,
+                summary: video.summary,
+              }
+            );
+
+            const genreindex = this.selectgenres.findIndex(
+              (v) => v.id === video.genre_id
+            );
+            alert(index + " " + genreindex);
+            alert(
+              this.videos_data[index].video_title +
+                " " +
+                this.selectgenres[genreindex].name
+            );
+            this.$set(
+              this.videos_data[index],
+              "genre",
+              this.selectgenres[genreindex]
+            );
+            console.log(result);
+          }
+          this.$set(this.active, index, !this.active[index]);
+          // this.shop.comments.splice(index, 1);
+          // this.active.splice(index, 1);
+        } else {
+          alert("自分の投稿のみ更新できます。");
+        }
+      } catch (e) {
+        alert(e);
+      }
+    },
+    async deleteVideo(video) {
       //動画削除
       alert(video.id);
       try {
-        //if (this.shop.comments[index].user_id == this.$store.state.user.id) {
-        const result = await axios.delete(this.api_url + "videos/" + video.id);
-        console.log(result);
-        this.videos_data.splice(index, 1);
-        // this.shop.comments.splice(index, 1);
-        // this.active.splice(index, 1);
-        // } else {
-        //   alert("自分のコメントのみ削除できます。");
-        // }
+        if (video.user_id == this.$store.state.user.id) {
+          const result = await axios.delete(
+            this.api_url + "videos/" + video.id
+          );
+          console.log(result);
+          const index = this.videos_data.findIndex((v) => v.id === video.id);
+
+          this.videos_data.splice(index, 1);
+          // this.shop.comments.splice(index, 1);
+          // this.active.splice(index, 1);
+        } else {
+          alert("自分の投稿のみ削除できます。");
+        }
       } catch (e) {
         alert(e);
       }
@@ -213,7 +302,7 @@ export default {
         this.like(video);
       }
     },
-    async setFav(video, index) {
+    async setFav(video) {
       const video_data = video;
       console.log(video_data);
 
@@ -251,6 +340,9 @@ export default {
         const video_data_after = await axios.get(
           this.api_url + "videos/" + video_data.id
         );
+
+        const index = this.videos_data.findIndex((v) => v.id === video_data.id);
+
         console.log(video_data_after);
         alert(index + " " + this.$store.state.user.id);
         this.videos_data.splice(index, 1, video_data_after.data.data);
@@ -270,6 +362,12 @@ export default {
       });
 
       return result;
+    },
+    getActive(video) {
+      const video_data = video;
+      const index = this.videos_data.findIndex((v) => v.id === video_data.id);
+
+      return this.active[index];
     },
     openModal() {
       this.id = "";
