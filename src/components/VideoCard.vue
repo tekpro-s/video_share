@@ -1,5 +1,7 @@
 <template>
   <div>
+    {{ genre }}
+    {{ keyword }}
     <!-- {{ selectgenres }}
     {{ videos_data }} -->
     <!-- {{ genre }}<br />
@@ -22,50 +24,79 @@
       動画を追加する
     </button>
     <div id="overlay" v-if="show">
-      <div id="content" class="modal">
-        <div>
-          <ul>
-            <li>
-              動画ID：<input
-                placeholder="動画ID"
-                name="video_name"
-                v-model="video_name"
-                cols="40"
-              />
-            </li>
-            <li>
-              ジャンル：
-              <select class="search" v-model="genre_id">
-                <option value="">All genre</option>
-                <option
-                  v-for="genre in selectgenres"
-                  :key="genre.id"
-                  :value="genre.id"
+      <div id="content">
+        <validation-observer ref="obs" v-slot="ObserverProps">
+          <div>
+            <ul>
+              <li>
+                <validation-provider
+                  name="動画ID"
+                  v-slot="{ errors }"
+                  rules="required|max:30"
                 >
-                  {{ genre.name }}
-                </option>
-              </select>
-            </li>
-            <li>
-              動画概要：
-              <textarea
-                placeholder="動画概要"
-                name="summary"
-                v-model="summary"
-                class="flex"
-                rows="4"
-                cols="40"
-              >
-              </textarea>
-            </li>
-          </ul>
-        </div>
-        <button class="owner-button" @click="send">動画を追加する</button>
-        <button class="owner-button" @click="closeModal">閉じる</button>
+                  動画ID：<input
+                    placeholder="動画ID"
+                    name="video_name"
+                    v-model="video_name"
+                    cols="40"
+                  />
+                  <p class="error">{{ errors[0] }}</p>
+                </validation-provider>
+              </li>
+              <li>
+                <validation-provider
+                  name="ジャンル"
+                  v-slot="{ errors }"
+                  rules="required"
+                >
+                  ジャンル：
+                  <select class="search" v-model="genre_id">
+                    <option value="">All genre</option>
+                    <option
+                      v-for="genre in selectgenres"
+                      :key="genre.id"
+                      :value="genre.id"
+                    >
+                      {{ genre.name }}
+                    </option>
+                  </select>
+                  <p class="error">{{ errors[0] }}</p>
+                </validation-provider>
+              </li>
+              <li>
+                <validation-provider
+                  name="動画概要"
+                  v-slot="{ errors }"
+                  rules="required|max:255"
+                >
+                  動画概要：
+                  <textarea
+                    placeholder="動画概要"
+                    name="summary"
+                    v-model="summary"
+                    class="flex"
+                    rows="4"
+                    cols="40"
+                  >
+                  </textarea>
+                  <p class="error">{{ errors[0] }}</p>
+                </validation-provider>
+              </li>
+            </ul>
+          </div>
+          <button
+            class="owner-button"
+            @click="send"
+            :disabled="ObserverProps.invalid || !ObserverProps.validated"
+          >
+            動画を追加する
+          </button>
+          <button class="owner-button" @click="closeModal">閉じる</button>
+        </validation-observer>
       </div>
     </div>
     <div class="home flex">
-      <div v-for="video in filteredVideos" :key="video.id" class="card">
+      <div v-for="video in getItems" :key="video.id" class="card">
         <div v-if="video">
           <iframe
             width="320"
@@ -77,50 +108,89 @@
             allowfullscreen
           ></iframe>
           <div class="card-content">
-            <h2 class="card-title" v-if="!getActive(video)">
-              {{ video.video_title }}
-            </h2>
-            <input
-              placeholder="title"
-              v-model="video.video_title"
-              size="50"
-              v-else
-            />
-          </div>
-          <div class="flex">
-            <div class="card-link">
-              <p v-if="!getActive(video)">{{ video.genre.name }}</p>
-              <select class="search" v-model="video.genre_id" v-else>
-                {{
-                  genres
-                }}
-                <option value="">All genre</option>
-                <option
-                  v-for="genre in selectgenres"
-                  :key="genre.id"
-                  :value="genre.id"
-                >
-                  {{ genre.name }}
-                </option>
-              </select>
-
-              <p v-if="!getActive(video)">{{ video.summary }}</p>
-              <input
-                placeholder="summary"
-                v-model="video.summary"
-                size="50"
-                v-else
-              />
-              <!-- <p>{{ video.likes }}</p>
+            <div class="flex">
+              <div class="card-link">
+                <validation-observer ref="obs" v-slot="ObserverProps">
+                  <div v-if="!getActive(video)">
+                    <h2 class="card-title">
+                      {{ video.video_title }}
+                    </h2>
+                  </div>
+                  <div v-else>
+                    <validation-provider
+                      name="タイトル"
+                      v-slot="{ errors }"
+                      rules="required|max:255"
+                    >
+                      <input
+                        placeholder="title"
+                        v-model="video.video_title"
+                        size="50"
+                      />
+                      <p class="error">{{ errors[0] }}</p>
+                    </validation-provider>
+                  </div>
+                  <div v-if="!getActive(video)">
+                    <p>{{ video.genre.name }}</p>
+                  </div>
+                  <div v-else>
+                    <validation-provider
+                      name="ジャンル"
+                      v-slot="{ errors }"
+                      rules="required"
+                    >
+                      <select class="search" v-model="video.genre_id">
+                        {{
+                          genres
+                        }}
+                        <option value="">All genre</option>
+                        <option
+                          v-for="genre in selectgenres"
+                          :key="genre.id"
+                          :value="genre.id"
+                        >
+                          {{ genre.name }}
+                        </option>
+                      </select>
+                      <p class="error">{{ errors[0] }}</p>
+                    </validation-provider>
+                  </div>
+                  <div v-if="!getActive(video)">
+                    <p>{{ video.summary }}</p>
+                  </div>
+                  <div v-else>
+                    <validation-provider
+                      name="動画概要"
+                      v-slot="{ errors }"
+                      rules="required|max:255"
+                    >
+                      <input
+                        placeholder="summary"
+                        v-model="video.summary"
+                        size="50"
+                      />
+                      <p class="error">{{ errors[0] }}</p>
+                    </validation-provider>
+                  </div>
+                  <!-- <p>{{ video.likes }}</p>
               <p>{{ video.id }}</p> -->
-              <!-- <p>{{ video.liked_by_user }}</p> -->
-              <!-- <button @click="detail(video.id)">詳しくみる</button> -->
-              <button @click="updateVideo(video)" v-if="$route.path === '/'">
-                更新
-              </button>
-              <button @click="deleteVideo(video)" v-if="$route.path === '/'">
-                削除
-              </button>
+                  <!-- <p>{{ video.liked_by_user }}</p> -->
+                  <!-- <button @click="detail(video.id)">詳しくみる</button> -->
+                  <button
+                    @click="updateVideo(video)"
+                    v-if="$route.path === '/'"
+                    :disabled="ObserverProps.invalid"
+                  >
+                    更新
+                  </button>
+                  <button
+                    @click="deleteVideo(video)"
+                    v-if="$route.path === '/'"
+                  >
+                    削除
+                  </button>
+                </validation-observer>
+              </div>
             </div>
             <img
               v-if="!getFav(video)"
@@ -144,12 +214,36 @@
           </div>
         </div>
       </div>
+      <paginate
+        :page-count="getPageCount"
+        :page-range="3"
+        :margin-pages="2"
+        :click-handler="clickCallback"
+        :prev-text="'＜'"
+        :next-text="'＞'"
+        :container-class="'pagination'"
+        :page-class="'page-item'"
+      >
+      </paginate>
     </div>
   </div>
 </template>
 
 <script>
+import {
+  extend,
+  ValidationProvider,
+  ValidationObserver,
+  localize,
+} from "vee-validate/dist/vee-validate.full";
+import { required, max } from "vee-validate/dist/rules";
+import ja from "vee-validate/dist/locale/ja";
 import axios from "axios";
+
+// バリデーションルール
+extend("required", required);
+extend("max", max);
+localize("ja", ja);
 
 export default {
   props: {
@@ -158,6 +252,11 @@ export default {
     keyword: String,
   },
   data() {
+    var items = [];
+    for (var i = 1; i <= 105; i++) {
+      items.push("item-" + i);
+    }
+
     return {
       selectgenres: [],
       api_url: null,
@@ -169,9 +268,20 @@ export default {
       genre_id: 1,
       summary: "",
       active: [],
+
+      items: items,
+      parPage: 10,
+      currentPage: 1,
     };
   },
+  components: {
+    ValidationProvider,
+    ValidationObserver,
+  },
   methods: {
+    clickCallback: function (pageNum) {
+      this.currentPage = Number(pageNum);
+    },
     async getVideos() {
       const videos = await axios.get(this.api_url + "videos");
       this.videos_data = videos.data.data;
@@ -236,6 +346,8 @@ export default {
         const index = this.videos_data.findIndex((v) => v.id === video.id);
 
         if (video.user_id == this.$store.state.user.id) {
+          this.$set(this.active, index, !this.active[index]);
+
           if (!this.active[index]) {
             const result = await axios.put(
               this.api_url + "videos/" + video.id,
@@ -264,7 +376,7 @@ export default {
             );
             console.log(result);
           }
-          this.$set(this.active, index, !this.active[index]);
+
           // this.shop.comments.splice(index, 1);
           // this.active.splice(index, 1);
         } else {
@@ -379,6 +491,19 @@ export default {
     },
   },
   computed: {
+    getItems: function () {
+      let current = this.currentPage * this.parPage;
+      let start = current - this.parPage;
+      alert(this.videos_data);
+      if (this.videos_data == null) {
+        return this.videos_data;
+      } else {
+        return this.videos_data.slice(start, current);
+      }
+    },
+    getPageCount: function () {
+      return Math.ceil(this.videos_data.length / this.parPage);
+    },
     filteredVideos() {
       // 全店舗の元データを読み込む
       const videos = [];
@@ -424,7 +549,6 @@ export default {
     // 環境設定ファイルからURL取得
     this.api_url = process.env.VUE_APP_API_BASE_URL;
     this.getVideos();
-    alert("");
     this.getGenres();
   },
 };
@@ -475,6 +599,9 @@ export default {
   margin-right: 0px;
   border: none;
   color: white;
+}
+.card button:disabled {
+  background-color: #7e9aff;
 }
 .area {
   margin-left: 20px;

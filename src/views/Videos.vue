@@ -6,7 +6,7 @@
       @change-genre="genre = $event"
       @input-keyword="keyword = $event"
     />
-    <VideoCard :genre="genre" :genres="genres" :keyword="keyword" />
+    <VideoCard :genre="genre" :keyword="keyword" />
   </div>
 </template>
 
