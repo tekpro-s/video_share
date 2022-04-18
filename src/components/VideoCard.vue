@@ -1,21 +1,5 @@
 <template>
   <div>
-    {{ genre }}
-    {{ keyword }}
-    <!-- {{ selectgenres }}
-    {{ videos_data }} -->
-    <!-- {{ genre }}<br />
-    {{ genres }}<br />
-    {{ keyword }}<br />
-    {{ filteredVideos }}<br /> -->
-    <!-- {{ videos_data }}
-    {{ getFav }} -->
-    <!-- {{ videos_snippets }} -->
-    {{ selectgenres }}
-    <!-- {{ active }}
-    {{ videos_data }} -->
-    {{ videos_data[0] }}
-
     <button
       v-if="this.$store.state.auth && this.$route.path === '/'"
       class="add-button"
@@ -96,7 +80,7 @@
       </div>
     </div>
     <div class="home flex">
-      <div v-for="video in getItems" :key="video.id" class="card">
+      <div v-for="video in filteredVideos" :key="video.id" class="card">
         <div v-if="video">
           <iframe
             width="320"
@@ -172,10 +156,7 @@
                       <p class="error">{{ errors[0] }}</p>
                     </validation-provider>
                   </div>
-                  <!-- <p>{{ video.likes }}</p>
-              <p>{{ video.id }}</p> -->
-                  <!-- <p>{{ video.liked_by_user }}</p> -->
-                  <!-- <button @click="detail(video.id)">詳しくみる</button> -->
+
                   <button
                     @click="updateVideo(video)"
                     v-if="$route.path === '/'"
@@ -206,25 +187,9 @@
               @click="setFav(video)"
               alt
             />
-            <!-- <button
-              class="icon"
-              @click="onLikeClick(video)"
-              :class="{ 'heart-animation': video.liked_by_user }"
-            /> -->
           </div>
         </div>
       </div>
-      <paginate
-        :page-count="getPageCount"
-        :page-range="3"
-        :margin-pages="2"
-        :click-handler="clickCallback"
-        :prev-text="'＜'"
-        :next-text="'＞'"
-        :container-class="'pagination'"
-        :page-class="'page-item'"
-      >
-      </paginate>
     </div>
   </div>
 </template>
@@ -265,13 +230,9 @@ export default {
       show: false,
       id: "",
       video_name: "",
-      genre_id: 1,
+      genre_id: 0,
       summary: "",
       active: [],
-
-      items: items,
-      parPage: 10,
-      currentPage: 1,
     };
   },
   components: {
@@ -290,7 +251,7 @@ export default {
         this.active.push(false);
         console.log(i);
       }
-      // this.videos_snippets = videos.data.snippets;
+
       console.log(this.videos);
     },
     async getGenres() {
@@ -307,15 +268,6 @@ export default {
     async send() {
       //動画追加
       try {
-        alert(
-          this.video_name +
-            " " +
-            this.$store.state.user.id +
-            " " +
-            this.genre_id +
-            " " +
-            this.summary
-        );
         const videos = await axios.post(this.api_url + "videos", {
           video_name: this.video_name,
           video_title: "テスト",
@@ -330,7 +282,6 @@ export default {
 
         console.log(video.data.data);
         this.videos_data.push(video.data.data);
-        // this.videos_snippets.push(video.data.snippets);
         this.show = false;
 
         console.log(video);
@@ -340,8 +291,6 @@ export default {
     },
     async updateVideo(video) {
       //動画更新
-      alert(video.id);
-
       try {
         const index = this.videos_data.findIndex((v) => v.id === video.id);
 
@@ -363,12 +312,7 @@ export default {
             const genreindex = this.selectgenres.findIndex(
               (v) => v.id === video.genre_id
             );
-            alert(index + " " + genreindex);
-            alert(
-              this.videos_data[index].video_title +
-                " " +
-                this.selectgenres[genreindex].name
-            );
+
             this.$set(
               this.videos_data[index],
               "genre",
@@ -376,9 +320,6 @@ export default {
             );
             console.log(result);
           }
-
-          // this.shop.comments.splice(index, 1);
-          // this.active.splice(index, 1);
         } else {
           alert("自分の投稿のみ更新できます。");
         }
@@ -388,7 +329,6 @@ export default {
     },
     async deleteVideo(video) {
       //動画削除
-      alert(video.id);
       try {
         if (video.user_id == this.$store.state.user.id) {
           const result = await axios.delete(
@@ -398,8 +338,6 @@ export default {
           const index = this.videos_data.findIndex((v) => v.id === video.id);
 
           this.videos_data.splice(index, 1);
-          // this.shop.comments.splice(index, 1);
-          // this.active.splice(index, 1);
         } else {
           alert("自分の投稿のみ削除できます。");
         }
@@ -420,10 +358,8 @@ export default {
 
       // ログイン中のユーザーIDが、ショップに紐づくいいねリストにあるか確認
       const result = video_data.likes.some((value) => {
-        alert(value.user_id + " " + this.$store.state.user.id);
         return value.user_id == this.$store.state.user.id;
       });
-      alert(result);
 
       try {
         // いいねが存在するか確認
@@ -456,9 +392,7 @@ export default {
         const index = this.videos_data.findIndex((v) => v.id === video_data.id);
 
         console.log(video_data_after);
-        alert(index + " " + this.$store.state.user.id);
         this.videos_data.splice(index, 1, video_data_after.data.data);
-        alert(this.videos_data);
         console.log(this.videos_data);
       } catch (error) {
         alert(error);
@@ -469,7 +403,6 @@ export default {
 
       // ログイン中のユーザーIDが、ショップに紐づくいいねリストにあるか確認
       const result = video_data.likes.some((value) => {
-        //alert(value.user_id + " " + this.$store.state.user.id);
         return value.user_id == this.$store.state.user.id;
       });
 
@@ -494,7 +427,7 @@ export default {
     getItems: function () {
       let current = this.currentPage * this.parPage;
       let start = current - this.parPage;
-      alert(this.videos_data);
+
       if (this.videos_data == null) {
         return this.videos_data;
       } else {
@@ -509,15 +442,10 @@ export default {
       const videos = [];
 
       for (const i in this.videos_data) {
-        //var flag = false;
-        //alert(flag);
         const videos_data = this.videos_data[i];
-        // const videos_snippet = this.videos_snippets[i];
-        //alert(videos_snippet.title);
         console.log(videos_data);
         if (videos_data.video_title.indexOf(this.keyword) !== -1) {
           if (videos_data.genre.name == this.genre || !this.genre) {
-            //alert(video.genre.name + " " + this.genre);
             if (this.$route.path === "/mypage") {
               //ログイン中のユーザーIDが、ショップに紐づくいいねリストにあるか確認
               const result = videos_data.likes.some((value) => {
@@ -526,8 +454,6 @@ export default {
               if (result) {
                 videos.push(videos_data);
               }
-              // flag = true;
-              // alert(flag);
             } else {
               videos.push(videos_data);
             }
@@ -535,13 +461,6 @@ export default {
         }
       }
 
-      // if (flag == true) {
-      //   videos.push(videos_data);
-      // } else {
-      //   videos.push(false);
-      // }
-      //}
-      //alert(videos);
       return videos;
     },
   },
@@ -622,7 +541,7 @@ export default {
 }
 
 .add-button {
-  width: 100px;
+  width: 200px;
   text-align: center;
   padding: 8px 0 10px;
   background-color: #0438ff;

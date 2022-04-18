@@ -2,7 +2,6 @@
   <div>
     <div class="card">
       <div class="card_title">
-        {{ api_url }}
         <h2>ログイン</h2>
       </div>
       <div class="form">

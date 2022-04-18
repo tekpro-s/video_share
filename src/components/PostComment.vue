@@ -90,7 +90,6 @@ export default {
     },
     // コメント更新
     async edit(video_id, comment_id, index) {
-      //console.log(this.video_data.comments[index]);
       try {
         if (
           this.video_data.comments[index].user_id == this.$store.state.user.id
@@ -168,20 +167,10 @@ export default {
         alert(error);
       }
     },
-    // setCommentsActive() {
-    //   console.log("a");
-    //   console.log(this.video_data);
-    //   console.log(this.video_data.comments);
-    //   for (const i in this.video_data.comments) {
-    //     this.active.push(true);
-    //     console.log(i);
-    //   }
-    // },
   },
   created() {
     // 環境設定ファイルからURL取得
     this.api_url = process.env.VUE_APP_API_BASE_URL;
-    //this.setCommentsActive();
   },
 };
 </script>
