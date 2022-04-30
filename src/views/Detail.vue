@@ -4,24 +4,19 @@
     <div class="flex">
       <div class="video">
         <BackButton />
-        <h2 class="video-title">{{ video_data }}</h2>
-        <p class="summary">{{ video_snippets }}</p>
+        <br />
         <iframe
           width="320"
           height="180"
-          :src="srcCreate(video_data.video_id)"
+          :src="srcCreate(video_data.video_name)"
           title="YouTube video player"
           frameborder="0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowfullscreen
-          v-if="video_snippets"
+          allowfullscreenß
         ></iframe>
-        <div class="card-content">
-          <h2 class="card-title" v-if="video_snippets">
-            {{ video_snippets.title }}
-          </h2>
-          <p v-if="video_data">{{ video_data.summary }}</p>
-        </div>
+        <h2 class="video-title">{{ video_data.video_title }}</h2>
+        <p>{{ video_data.genre.name }}</p>
+        <p class="summary">{{ video_data.summary }}</p>
       </div>
     </div>
     <div>
@@ -51,6 +46,12 @@ export default {
       const video = await axios.get(this.api_url + "videos/" + this.video_id);
       this.video_data = video.data.data;
       this.video_snippets = video.data.snippets;
+      console.log(this.video_data);
+    },
+    async getVideos() {
+      const video = await axios.get(this.api_url + "videos/" + this.video_id);
+      this.videos_data = video.data.data;
+
       console.log(this.video_data);
     },
     srcCreate(video_id) {
@@ -97,12 +98,12 @@ export default {
 .genre {
   cursor: pointer;
 }
-.shop {
+.video {
   color: black;
   width: 50%;
   margin: 10px;
 }
-.shop-title,
+.video-title,
 .reservation-title {
   font-size: 24px;
 }

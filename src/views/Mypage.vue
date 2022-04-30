@@ -1,7 +1,7 @@
 <template>
   <div>
     <HeaderAuth />
-    <button @click="$router.push('/')">&lt;</button>
+    <BackButton />
     <h2 class="title">お気に入り動画一覧</h2>
     <VideoSearch
       @change-genre="genre = $event"
@@ -15,6 +15,7 @@
 import HeaderAuth from "../components/HeaderAuth";
 import VideoCard from "@/components/VideoCard.vue";
 import VideoSearch from "@/components/VideoSearch.vue";
+import BackButton from "../components/BackButton";
 import axios from "axios";
 export default {
   data() {
@@ -28,6 +29,7 @@ export default {
     HeaderAuth,
     VideoCard,
     VideoSearch,
+    BackButton,
   },
   methods: {
     setGenre(genre_name) {

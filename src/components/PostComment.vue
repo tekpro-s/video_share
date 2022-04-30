@@ -1,7 +1,9 @@
 <template>
   <div>
     <div class="left-padding">
-      <button class="comment-button" @click="openModal">投稿する</button>
+      <button class="comment-button" @click="openModal">
+        コメントを投稿する
+      </button>
     </div>
     <div id="overlay" v-if="show">
       <div id="content" class="modal">
@@ -16,7 +18,7 @@
           >
           </textarea>
         </div>
-        <button class="comment-button" @click="send">投稿する</button>
+        <button class="comment-button" @click="send">コメントを投稿する</button>
       </div>
     </div>
     {{ video_data.comments[0] }}
@@ -206,18 +208,6 @@ export default {
   margin-right: auto;
   border-radius: 10px;
 }
-
-.comment-button {
-  width: 100px;
-  text-align: center;
-  padding: 8px 0 10px;
-  background-color: #0438ff;
-  border-radius: 10px;
-  cursor: pointer;
-  margin-top: 10px;
-  color: white;
-  border: none;
-}
 .comment {
   background: #305dff;
   color: white;
@@ -247,7 +237,7 @@ export default {
   margin-bottom: 10px;
 }
 .comment-button {
-  width: 100px;
+  width: 300px;
   text-align: center;
   padding: 8px 0 10px;
   background-color: #0438ff;

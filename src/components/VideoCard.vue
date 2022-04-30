@@ -170,6 +170,9 @@
                   >
                     削除
                   </button>
+                  <button @click="detail(video.id)" v-if="$route.path === '/'">
+                    詳細
+                  </button>
                 </validation-observer>
               </div>
             </div>
